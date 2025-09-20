@@ -91,16 +91,28 @@ function initializeDatabase() {
     )`
   ];
 
-  tables.forEach(sql => {
-    db.run(sql, (err) => {
-      if (err) {
-        console.error('Error creating table:', err.message);
-      }
-    });
+  // Create tables sequentially to ensure proper order
+  createTablesSequentially(tables, 0, () => {
+    console.log('All tables created successfully');
+    // Insert sample data after all tables are created
+    insertSampleData();
   });
+}
 
-  // Insert sample data
-  insertSampleData();
+function createTablesSequentially(tables, index, callback) {
+  if (index >= tables.length) {
+    callback();
+    return;
+  }
+
+  db.run(tables[index], (err) => {
+    if (err) {
+      console.error('Error creating table:', err.message);
+    } else {
+      console.log(`Table ${index + 1} created successfully`);
+    }
+    createTablesSequentially(tables, index + 1, callback);
+  });
 }
 
 // Sample data insertion
