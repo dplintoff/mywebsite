@@ -25,10 +25,11 @@ app.use(session({
 }));
 
 // Database setup
-const db = new sqlite3.Database('./database/career_advisor.db', (err) => {
+const dbPath = path.join(__dirname, 'database', 'career_advisor.db');
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
-    console.error('Database path:', './database/career_advisor.db');
+    console.error('Database path:', dbPath);
   } else {
     console.log('Connected to SQLite database.');
     initializeDatabase();
