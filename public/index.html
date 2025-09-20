@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career & Education Advisor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>CareerGuide</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#quiz" class="nav-link">Aptitude Quiz</a>
+                <a href="#courses" class="nav-link">Courses</a>
+                <a href="#colleges" class="nav-link">Colleges</a>
+                <a href="#careers" class="nav-link">Career Paths</a>
+                <a href="#study" class="nav-link">Study Materials</a>
+                <a href="#about" class="nav-link">About</a>
+            </div>
+            <div class="nav-auth">
+                <button class="btn btn-outline" id="loginBtn">Login</button>
+                <button class="btn btn-primary" id="registerBtn">Register</button>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Your Future Starts Here</h1>
+            <p>Discover your perfect career path with personalized guidance and expert recommendations</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="startQuiz()">Take Aptitude Test</button>
+                <button class="btn btn-outline" onclick="exploreColleges()">Find Colleges</button>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <h3>1000+</h3>
+                <p>Students Guided</p>
+            </div>
+            <div class="stat">
+                <h3>500+</h3>
+                <p>Government Colleges</p>
+            </div>
+            <div class="stat">
+                <h3>50+</h3>
+                <p>Career Paths</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="about">
+        <div class="container">
+            <h2>Why Choose CareerGuide?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-brain"></i>
+                    <h3>AI-Powered Recommendations</h3>
+                    <p>Get personalized course and career suggestions based on your aptitude and interests</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-university"></i>
+                    <h3>Government Colleges Directory</h3>
+                    <p>Find the best government colleges near you with detailed information and facilities</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-road"></i>
+                    <h3>Career Path Mapping</h3>
+                    <p>Visualize your journey from course selection to dream career with detailed roadmaps</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-bell"></i>
+                    <h3>Timeline Tracker</h3>
+                    <p>Never miss important dates for admissions, scholarships, and entrance exams</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quiz Section -->
+    <section class="quiz-section" id="quiz">
+        <div class="container">
+            <h2>Discover Your Potential</h2>
+            <p>Take our comprehensive aptitude test to find the perfect career path for you</p>
+            <div class="quiz-container" id="quizContainer" style="display: none;">
+                <div class="quiz-question">
+                    <h3 id="questionText"></h3>
+                    <div class="quiz-options" id="optionsContainer"></div>
+                </div>
+                <div class="quiz-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span id="progressText">1 / 10</span>
+                </div>
+                <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+            <button class="btn btn-primary" id="startQuizBtn" onclick="showQuiz()">Start Quiz</button>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section class="courses-section" id="courses">
+        <div class="container">
+            <h2>Explore Courses</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterCourses('all')">All</button>
+                <button class="filter-btn" onclick="filterCourses('arts')">Arts</button>
+                <button class="filter-btn" onclick="filterCourses('science')">Science</button>
+                <button class="filter-btn" onclick="filterCourses('commerce')">Commerce</button>
+            </div>
+            <div class="courses-grid" id="coursesGrid">
+                <!-- Courses will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Colleges Section -->
+    <section class="colleges-section" id="colleges">
+        <div class="container">
+            <h2>Find Government Colleges</h2>
+            <div class="search-container">
+                <input type="text" id="locationSearch" placeholder="Enter your location" class="search-input">
+                <button class="btn btn-primary" onclick="searchColleges()">Search</button>
+            </div>
+            <div class="colleges-grid" id="collegesGrid">
+                <!-- Colleges will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Career Paths Section -->
+    <section class="careers-section" id="careers">
+        <div class="container">
+            <h2>Career Path Visualization</h2>
+            <div class="career-paths">
+                <div class="career-path">
+                    <h3>Arts Stream</h3>
+                    <div class="path-flow">
+                        <div class="path-node">Class 12</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">B.A.</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">Career Options</div>
+                    </div>
+                    <div class="career-options">
+                        <span class="career-tag">Teaching</span>
+                        <span class="career-tag">Civil Services</span>
+                        <span class="career-tag">Journalism</span>
+                        <span class="career-tag">Social Work</span>
+                    </div>
+                </div>
+                <div class="career-path">
+                    <h3>Science Stream</h3>
+                    <div class="path-flow">
+                        <div class="path-node">Class 12</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">B.Sc.</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">Career Options</div>
+                    </div>
+                    <div class="career-options">
+                        <span class="career-tag">Research</span>
+                        <span class="career-tag">Medicine</span>
+                        <span class="career-tag">Engineering</span>
+                        <span class="career-tag">Teaching</span>
+                    </div>
+                </div>
+                <div class="career-path">
+                    <h3>Commerce Stream</h3>
+                    <div class="path-flow">
+                        <div class="path-node">Class 12</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">B.Com</div>
+                        <div class="path-arrow">→</div>
+                        <div class="path-node">Career Options</div>
+                    </div>
+                    <div class="career-options">
+                        <span class="career-tag">Banking</span>
+                        <span class="career-tag">Accounting</span>
+                        <span class="career-tag">Finance</span>
+                        <span class="career-tag">Business</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Study Materials Section -->
+    <section class="study-section" id="study">
+        <div class="container">
+            <h2>Study Materials</h2>
+            <div class="materials-grid" id="materialsGrid">
+                <div class="material-card">
+                    <i class="fas fa-book"></i>
+                    <h3>Mathematics</h3>
+                    <p>Comprehensive study guides and practice problems</p>
+                    <button class="btn btn-outline">Download</button>
+                </div>
+                <div class="material-card">
+                    <i class="fas fa-atom"></i>
+                    <h3>Physics</h3>
+                    <p>Interactive simulations and theory explanations</p>
+                    <button class="btn btn-outline">Download</button>
+                </div>
+                <div class="material-card">
+                    <i class="fas fa-flask"></i>
+                    <h3>Chemistry</h3>
+                    <p>Laboratory experiments and chemical reactions</p>
+                    <button class="btn btn-outline">Download</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>CareerGuide</h4>
+                    <p>Your one-stop destination for career and education guidance</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#quiz">Aptitude Quiz</a></li>
+                        <li><a href="#courses">Courses</a></li>
+                        <li><a href="#colleges">Colleges</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#study">Study Materials</a></li>
+                        <li><a href="#careers">Career Paths</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#">Help Center</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>Email: info@careerguide.gov.in</p>
+                    <p>Phone: +91-1800-XXX-XXXX</p>
+                    <p>Address: Government Education Department</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 CareerGuide. All rights reserved. | Government of India Initiative</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Register</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Full Name</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerAge">Age</label>
+                    <input type="number" id="registerAge" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerGender">Gender</label>
+                    <select id="registerGender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="registerClass">Current Class</label>
+                    <select id="registerClass" required>
+                        <option value="">Select Class</option>
+                        <option value="10">Class 10</option>
+                        <option value="12">Class 12</option>
+                        <option value="graduate">Graduate</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
