@@ -1,11 +1,12 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const initSqlJs = require('sql.js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,19 +26,37 @@ app.use(session({
 }));
 
 // Database setup
-const dbPath = path.join(__dirname, 'database', 'career_advisor.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-    console.error('Database path:', dbPath);
-  } else {
-    console.log('Connected to SQLite database.');
-    initializeDatabase();
-  }
-});
+let db;
+let SQL;
 
-// Initialize database tables
-function initializeDatabase() {
+async function initializeDatabase() {
+  try {
+    // Initialize sql.js
+    SQL = await initSqlJs();
+
+    // Try to load existing database file
+    const dbPath = path.join(__dirname, 'database', 'career_advisor.db');
+
+    if (fs.existsSync(dbPath)) {
+      // Load existing database
+      const filebuffer = fs.readFileSync(dbPath);
+      db = new SQL.Database(filebuffer);
+      console.log('Loaded existing SQLite database.');
+    } else {
+      // Create new database
+      db = new SQL.Database();
+      console.log('Created new SQLite database.');
+    }
+
+    // Create tables
+    createTables();
+  } catch (err) {
+    console.error('Error initializing database:', err.message);
+  }
+}
+
+// Create tables function
+function createTables() {
   const tables = [
     `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,28 +111,19 @@ function initializeDatabase() {
     )`
   ];
 
-  // Create tables sequentially to ensure proper order
-  createTablesSequentially(tables, 0, () => {
-    console.log('All tables created successfully');
-    // Insert sample data after all tables are created
-    insertSampleData();
-  });
-}
-
-function createTablesSequentially(tables, index, callback) {
-  if (index >= tables.length) {
-    callback();
-    return;
-  }
-
-  db.run(tables[index], (err) => {
-    if (err) {
-      console.error('Error creating table:', err.message);
-    } else {
+  // Create tables
+  tables.forEach((tableSql, index) => {
+    try {
+      db.run(tableSql);
       console.log(`Table ${index + 1} created successfully`);
+    } catch (err) {
+      console.error('Error creating table:', err.message);
     }
-    createTablesSequentially(tables, index + 1, callback);
   });
+
+  console.log('All tables created successfully');
+  // Insert sample data after all tables are created
+  insertSampleData();
 }
 
 // Sample data insertion
@@ -132,14 +142,26 @@ function insertSampleData() {
 
   // Insert sample colleges
   sampleColleges.forEach(college => {
-    db.run(`INSERT OR IGNORE INTO colleges (name, location, type, courses, facilities, cutoff, contact, website)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, college);
+    try {
+      const stmt = db.prepare(`INSERT OR IGNORE INTO colleges (name, location, type, courses, facilities, cutoff, contact, website)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+      stmt.run(college);
+      stmt.free();
+    } catch (err) {
+      console.error('Error inserting college data:', err.message);
+    }
   });
 
   // Insert sample courses
   sampleCourses.forEach(course => {
-    db.run(`INSERT OR IGNORE INTO courses (name, stream, description, duration, career_paths, subjects)
-            VALUES (?, ?, ?, ?, ?, ?)`, course);
+    try {
+      const stmt = db.prepare(`INSERT OR IGNORE INTO courses (name, stream, description, duration, career_paths, subjects)
+              VALUES (?, ?, ?, ?, ?, ?)`);
+      stmt.run(course);
+      stmt.free();
+    } catch (err) {
+      console.error('Error inserting course data:', err.message);
+    }
   });
 }
 
@@ -150,13 +172,15 @@ app.get('/', (req, res) => {
 
 // Test database connection
 app.get('/api/test-db', (req, res) => {
-  db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
-    if (err) {
-      console.error('Database test error:', err);
-      return res.status(500).json({ error: 'Database connection failed', details: err.message });
-    }
+  try {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM users');
+    const row = stmt.getAsObject({});
+    stmt.free();
     res.json({ message: 'Database connected successfully', userCount: row.count });
-  });
+  } catch (err) {
+    console.error('Database test error:', err);
+    res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
 });
 
 // Authentication routes
@@ -182,20 +206,21 @@ app.post('/api/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.run(`INSERT INTO users (name, email, password, age, gender, class)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, email, hashedPassword, age, gender, userClass],
-      function(err) {
-        if (err) {
-          console.error('Database error during registration:', err.message);
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(400).json({ error: 'User with this email already exists' });
-          }
-          return res.status(400).json({ error: 'Registration failed: ' + err.message });
-        }
-        console.log('User registered successfully:', this.lastID);
-        res.status(201).json({ message: 'User registered successfully', userId: this.lastID });
-      });
+    try {
+      const stmt = db.prepare(`INSERT INTO users (name, email, password, age, gender, class)
+              VALUES (?, ?, ?, ?, ?, ?)`);
+      const result = stmt.run([name, email, hashedPassword, age, gender, userClass]);
+      stmt.free();
+
+      console.log('User registered successfully:', result.lastID);
+      res.status(201).json({ message: 'User registered successfully', userId: result.lastID });
+    } catch (err) {
+      console.error('Database error during registration:', err.message);
+      if (err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ error: 'User with this email already exists' });
+      }
+      return res.status(400).json({ error: 'Registration failed: ' + err.message });
+    }
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Server error during registration' });
@@ -211,35 +236,32 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-      if (err) {
-        console.error('Database error during login:', err.message);
-        return res.status(500).json({ error: 'Database error during login' });
-      }
+    try {
+      const stmt = db.prepare(`SELECT * FROM users WHERE email = ?`);
+      const user = stmt.getAsObject([email]);
+      stmt.free();
 
-      if (!user) {
+      if (!user.id) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      try {
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign({ userId: user.id }, 'secret-key', { expiresIn: '24h' });
-        req.session.userId = user.id;
-
-        res.json({
-          message: 'Login successful',
-          token,
-          user: { id: user.id, name: user.name, email: user.email }
-        });
-      } catch (bcryptError) {
-        console.error('Password comparison error:', bcryptError);
-        res.status(500).json({ error: 'Authentication error' });
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
-    });
+
+      const token = jwt.sign({ userId: user.id }, 'secret-key', { expiresIn: '24h' });
+      req.session.userId = user.id;
+
+      res.json({
+        message: 'Login successful',
+        token,
+        user: { id: user.id, name: user.name, email: user.email }
+      });
+    } catch (err) {
+      console.error('Database error during login:', err.message);
+      return res.status(500).json({ error: 'Database error during login' });
+    }
   } catch (error) {
     console.error('Login route error:', error);
     res.status(500).json({ error: 'Server error during login' });
@@ -263,12 +285,20 @@ app.get('/api/colleges', (req, res) => {
     params.push(type);
   }
 
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
+  try {
+    const stmt = db.prepare(query);
+    const rows = [];
+
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
     }
+    stmt.free();
+
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // API routes for courses
@@ -283,12 +313,20 @@ app.get('/api/courses', (req, res) => {
     params.push(stream);
   }
 
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
+  try {
+    const stmt = db.prepare(query);
+    const rows = [];
+
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
     }
+    stmt.free();
+
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Quiz submission route
@@ -311,19 +349,21 @@ app.post('/api/submit-quiz', (req, res) => {
     else recommendations.push('Arts stream recommended');
   }
 
-  db.run(`INSERT INTO quiz_results (user_id, quiz_type, answers, score, recommendations)
-          VALUES (?, ?, ?, ?, ?)`,
-    [userId, quizType, JSON.stringify(answers), score, JSON.stringify(recommendations)],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to save quiz results' });
-      }
-      res.json({
-        message: 'Quiz submitted successfully',
-        score,
-        recommendations
-      });
+  try {
+    const stmt = db.prepare(`INSERT INTO quiz_results (user_id, quiz_type, answers, score, recommendations)
+            VALUES (?, ?, ?, ?, ?)`);
+    const result = stmt.run([userId, quizType, JSON.stringify(answers), score, JSON.stringify(recommendations)]);
+    stmt.free();
+
+    res.json({
+      message: 'Quiz submitted successfully',
+      score,
+      recommendations
     });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to save quiz results' });
+  }
 });
 
 // Global error handler for unhandled promise rejections
@@ -336,9 +376,11 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Initialize database and start server
+initializeDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 });
 
 module.exports = app;
