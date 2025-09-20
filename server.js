@@ -202,28 +202,48 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
-  db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-    if (err || !user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
+      if (err) {
+        console.error('Database error during login:', err.message);
+        return res.status(500).json({ error: 'Database error during login' });
+      }
 
-    const token = jwt.sign({ userId: user.id }, 'secret-key', { expiresIn: '24h' });
-    req.session.userId = user.id;
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
 
-    res.json({
-      message: 'Login successful',
-      token,
-      user: { id: user.id, name: user.name, email: user.email }
+      try {
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign({ userId: user.id }, 'secret-key', { expiresIn: '24h' });
+        req.session.userId = user.id;
+
+        res.json({
+          message: 'Login successful',
+          token,
+          user: { id: user.id, name: user.name, email: user.email }
+        });
+      } catch (bcryptError) {
+        console.error('Password comparison error:', bcryptError);
+        res.status(500).json({ error: 'Authentication error' });
+      }
     });
-  });
+  } catch (error) {
+    console.error('Login route error:', error);
+    res.status(500).json({ error: 'Server error during login' });
+  }
 });
 
 // API routes for colleges
@@ -304,6 +324,16 @@ app.post('/api/submit-quiz', (req, res) => {
         recommendations
       });
     });
+});
+
+// Global error handler for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
 // Start server
